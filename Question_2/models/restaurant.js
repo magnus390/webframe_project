@@ -1,15 +1,19 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 RestSchema = new Schema({
-    address: [{
+    address: {
         building: String,
         coord: Array,
         street: String,
         zipcode: String
-    }],
+    },
     borough: String,
     cuisine: String,
-    grades: Array,
+    grades: [{
+        "date": Date,
+        "grade": String,
+        "score": Number
+    }],
     name: String,
     restaurant_id: String
 });
