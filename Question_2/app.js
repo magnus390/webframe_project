@@ -1,39 +1,53 @@
-var express = require('express');
-var mongoose = require('mongoose');
-var path = require('path');
-var app = express();
-var database = require('./config/database');
-var bodyParser = require('body-parser');         // pull information from HTML POST (express4)
-const fs = require('fs')
-var port = process.env.PORT || 8000;
-app.use(bodyParser.urlencoded({ 'extended': 'true' }));            // parse application/x-www-form-urlencoded
-app.use(bodyParser.json());                                     // parse application/json
-app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
-
-/** Decode Form URL Encoded data */
-app.use(express.urlencoded({ extended: true }));
-//Loads the public directory using express.static
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const db = require('./config/database');
+const bodyParser = require('body-parser');
+const exphbs = require('express-handlebars');
+const path = require('path');
+require('dotenv').config();
+const port = process.env.PORT || 8000;
+app.use(cors());
+app.use(bodyParser.urlencoded({ 'extended': 'true' }));
+app.use(bodyParser.json());
+//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-//defines the extension '.hbs'
-const exphbs = require('express-handlebars');
-app.engine('.hbs', exphbs.engine({ extname: '.hbs' }));
+app.set('view engine', '.hbs');
 //app.engine('.hbs', HBS.engine);
-app.set('view engine', 'hbs');
+const dbConString = process.env.CONN_STRING;
 
-mongoose.connect(database.url);
+// Initializing Connection
+db.initializing(dbConString).then((res) => {
+    console.log("Database Is Successfully Connected");
+}).catch((error) => {
+    console.log(error)
+})
 
-//var Employee = require('./models/employee');
-var Rest = require('./models/restaurant');
+// get restaurant data based on the page and perpage
+app.get('/api/restaurant/:page/:perpage/:borough', function (req, res) {
 
 
-// create book and send back all books after creation
-app.post('/api/restaurant', function (req, res) {
 
-    // create mongose method to create a new record into collection
-    console.log(req.body);
+});
 
-    Rest.create({
+// Fetch Data Using Get
+app.get('/api/restaurants/:_id', async (req, res) => {
+    try {
+        let id = req.params._id;
+        let result = await db.getRestaurantById(id);
+        if (!result) {
+            throw "Sorry, the id is not found";
+        }
+        res.status(200).send(result);
+    } catch (err) {
+        res.status(401).send(err);
+    }
+});
+
+// Add Data Using Post
+app.post('/api/restaurants', async (req, res) => {
+    var data = {
         address: req.body.address,
         building: req.body.address.building,
         coord: req.body.address.coord,
@@ -44,18 +58,64 @@ app.post('/api/restaurant', function (req, res) {
         grades: req.body.grades,
         name: req.body.name,
         restaurant_id: req.body.restaurant_id
-    }, function (err, rest) {
-        if (err)
-            res.send(err);
+    }
+    let result = await db.addNewRestaurant(data);
 
-        // get and return all the books after newly created employe record
-        Rest.find(function (err, restaurant) {
-            if (err)
-                res.send(err)
-            res.json(restaurant);
-        });
-    });
+    if (result) {
+        res.status(200).send("Restaurant Is Added Successfully")
+    } else {
+        res.status(401).send("Error, Restaurant Is Not Added")
+    }
 });
 
-app.listen(port);
-console.log("App listening on port : " + port);
+// Update Data Using Put
+app.put('/api/restaurants/:_id', async (req, res) => {
+    let id = req.params._id;
+    try {
+        var data = {
+            address: req.body.address,
+            building: req.body.address.building,
+            coord: req.body.address.coord,
+            street: req.body.address.street,
+            zipcode: req.body.address.zipcode,
+            borough: req.body.borough,
+            cuisine: req.body.cuisine,
+            grades: req.body.grades,
+            name: req.body.name,
+            restaurant_id: req.body.restaurant_id
+        }
+
+        let result = await db.updateRestaurantById(data, id);
+        if (result) {
+            res.status(200).send("Restaurant Is Updated Successfully\n\n\n" + result);
+            //res.status(200).send(result);
+        } else {
+            throw "Error Occured";
+        }
+    }
+    catch (err) {
+        res.status(401).send("Error, Restaurant Is Not Found");
+    }
+});
+
+// Delete Data Using Delete
+app.delete('/api/restaurants/:_id', async (req, res) => {
+    try {
+        let id = req.params._id;
+        let result = await db.deleteRestaurantById(id);
+
+        if (result.deletedCount) {
+            res.status(200).send("Restaurant Is Successfully Deleted")
+        } else {
+            throw "Error, Restaurant Is Not Found";
+        }
+    }
+    catch (err) {
+        res.status(401).send(err);
+    }
+});
+
+// App Litening
+app.listen(port, () => {
+    console.log("App Listening On Port : " + port);
+});
