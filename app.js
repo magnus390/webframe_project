@@ -10,11 +10,23 @@ const port = process.env.PORT || 8000;
 app.use(cors());
 app.use(bodyParser.urlencoded({ 'extended': 'true' }));
 app.use(bodyParser.json());
-//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
+app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const HBS = exphbs.create({
+    helpers: {
+        arraySize: (arrayObject) => {
+            return Object.keys(arrayObject).length + 1;
+        }
+    },
+    runtimeOptions: {
+        allowProtoPropertiesByDefault: true
+    },
+    extname: ".hbs"
+});
+
 app.set('view engine', '.hbs');
-//app.engine('.hbs', HBS.engine);
+app.engine('.hbs', HBS.engine);
 const dbConString = process.env.CONN_STRING;
 
 // Initializing Connection
@@ -25,11 +37,63 @@ db.initializing(dbConString).then((res) => {
 })
 
 // get restaurant data based on the page and perpage
-app.get('/api/restaurant/:page/:perpage/:borough', function (req, res) {
+app.get('/api/restaurants', async function (req, res) {
+    console.log("Hello");
+    try {
+        let ans = req.query;
+        console.log("App file page variable" + ans.page);
 
+        let result = await db.getAllRestaurants(ans.page, ans.perPage, ans.borough);
+        console.log(result)
+        if (result) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send("Result Not Found!!");
 
+        }
+    }
+    catch (error) {
+        res.status(401).send(error.message);
+    }
 
 });
+
+
+//Question 3
+//add new restaurant
+app.get('/api/search', (req, res, next) => {
+    res.render('search');
+});
+
+//search based on page, perpage and borough
+app.post('/api/search', async (req, res, next) => {
+    const page = req.body.page;
+    const perPage = req.body.perpage;
+    const borough = req.body.borough;
+    //    console.log(Restaurant);
+
+    let result = await db.getAllRestaurants(page, perPage, borough);
+    console.log(result)
+    if (result) {
+        //res.status(200).send(result);
+        console.log("Question 3")
+        res.render('display', { data: result }); // return all restaurant in JSON format
+    } else {
+        res.status(401).send("Result Not Found!!");
+    }
+
+    // Restaurant.find({ borough: borough }, function (err, restaurants) {
+    //     // if there is an error retrieving, send the error otherwise send data
+    //     if (err)
+    //         res.send(err)
+    //     const starting = (page - 1) * perpage;
+    //     const ending = page * perpage;
+    //     const result = restaurants.slice(starting, ending);
+    //     res.render('display', { data: result, layout: false }); // return all restaurant in JSON format
+    // });
+
+});
+
 
 // Fetch Data Using Get
 app.get('/api/restaurants/:_id', async (req, res) => {
