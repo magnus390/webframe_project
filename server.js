@@ -67,31 +67,14 @@ app.get('/api/search', (req, res, next) => {
 
 //search based on page, perpage and borough
 app.post('/api/search', async (req, res, next) => {
-    const page = req.body.page;
-    const perPage = req.body.perpage;
-    const borough = req.body.borough;
-    //    console.log(Restaurant);
 
-    let result = await db.getAllRestaurants(page, perPage, borough);
+    let result = await db.getAllRestaurants(req.body.page, req.body.perpage, req.body.borough);
     console.log(result)
     if (result) {
-        //res.status(200).send(result);
-        console.log("Question 3")
-        res.render('display', { data: result }); // return all restaurant in JSON format
+        res.render('display', { data: result });
     } else {
-        res.status(401).send("Result Not Found!!");
+        res.status(401).send("Not Found!!");
     }
-
-    // Restaurant.find({ borough: borough }, function (err, restaurants) {
-    //     // if there is an error retrieving, send the error otherwise send data
-    //     if (err)
-    //         res.send(err)
-    //     const starting = (page - 1) * perpage;
-    //     const ending = page * perpage;
-    //     const result = restaurants.slice(starting, ending);
-    //     res.render('display', { data: result, layout: false }); // return all restaurant in JSON format
-    // });
-
 });
 
 
