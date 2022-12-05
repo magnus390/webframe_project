@@ -5,6 +5,7 @@ const db = require('./config/database');
 const bodyParser = require('body-parser');
 const exphbs = require('express-handlebars');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 8000;
 app.use(cors());
@@ -161,6 +162,28 @@ app.delete('/api/restaurants/:_id', async (req, res) => {
         res.status(401).send(err);
     }
 });
+
+DATABASE_USER = process.env.DATABASE_USER;
+DATABASE_PASSWORD = process.env.DATABASE_PASSWORD;
+//const restaurantDb = new Restaurant("mongodb+srv://" + DATABASE_USER + ":" + DATABASE_PASSWORD + "@umang.pkuqx1x.mongodb.net/sample_restaurants?retryWrites=true&w=majority");
+
+app.post('/login', (req, res) => {
+    console.log(req.body)
+    //Authenticated User
+    const username = req.body.username
+    const user = { name: username }
+    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN)
+    res.json({ accessToken: accessToken })
+})
+
+function verifyToken(req, res, next) {
+    const bearerHeadr = req.headers['authorization']
+    if (typeof bearerHeadr != 'undefined') {
+        const bearer = bearerHeadr.split(' ')
+        const bearerToken = bearer[1]
+        req.token = bearerTokennext()
+    }
+}
 
 // App Litening
 app.listen(port, () => {
