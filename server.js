@@ -185,6 +185,10 @@ function verifyToken(req, res, next) {
     }
 }
 
+app.all('*', async (req, res) => {
+    res.send("Wrong Route");
+});
+
 // App Litening
 app.listen(port, () => {
     console.log("App Listening On Port : " + port);
